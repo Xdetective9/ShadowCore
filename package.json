@@ -1,0 +1,65 @@
+{
+  "name": "shadowcore",
+  "version": "3.0.0",
+  "description": "Universal Plugin Platform with Auto-loading System",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "setup": "node setup.js",
+    "deploy": "npm run setup && npm start",
+    "test": "jest --verbose",
+    "build-plugins": "node scripts/build-plugins.js",
+    "update-deps": "node scripts/update-deps.js"
+  },
+  "keywords": [
+    "plugin-system",
+    "universal-platform",
+    "shadowcore",
+    "ai-tools",
+    "automation"
+  ],
+  "author": "Abdullah",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.3",
+    "ejs": "^3.1.9",
+    "dotenv": "^16.3.1",
+    "helmet": "^7.1.0",
+    "cors": "^2.8.5",
+    "compression": "^1.7.4",
+    "express-session": "^1.18.0",
+    "express-fileupload": "^1.4.0",
+    "resend": "^2.0.0",
+    "axios": "^1.6.2",
+    "form-data": "^4.0.0",
+    "crypto-js": "^4.2.0",
+    "sharp": "^0.33.2",
+    "socket.io": "^4.7.4",
+    "node-cron": "^3.0.3",
+    "winston": "^3.11.0",
+    "multer": "^1.4.5-lts.1",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "validator": "^13.11.0",
+    "cheerio": "^1.0.0-rc.12",
+    "node-fetch": "^3.3.2",
+    "whatsapp-web.js": "^1.23.0",
+    "qrcode-terminal": "^0.12.0",
+    "openai": "^4.28.0",
+    "node-telegram-bot-api": "^0.64.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.3",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/shadowcore.git"
+  }
+}
