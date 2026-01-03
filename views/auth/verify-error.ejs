@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verification Failed | ShadowCore</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+    <style>
+        .error-container {
+            max-width: 500px;
+            margin: 4rem auto;
+            padding: 3rem;
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            text-align: center;
+            backdrop-filter: blur(20px);
+        }
+        
+        .error-icon {
+            font-size: 5rem;
+            margin-bottom: 1.5rem;
+            animation: shake 0.5s ease-in-out;
+        }
+        
+        .error-title {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+        
+        .error-message {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+        
+        .error-details {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            text-align: left;
+        }
+        
+        .error-details h4 {
+            margin-top: 0;
+            color: #ef4444;
+        }
+        
+        .solutions {
+            text-align: left;
+            background: rgba(245, 158, 11, 0.1);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .solutions h3 {
+            margin-top: 0;
+            color: #f59e0b;
+        }
+        
+        .solutions ul {
+            padding-left: 1.5rem;
+            margin: 0;
+        }
+        
+        .solutions li {
+            margin-bottom: 0.75rem;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        
+        .error-code {
+            font-family: monospace;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius);
+            margin: 1rem 0;
+            display: inline-block;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <%- include('../partials/header') %>
+    
+    <div class="container">
+        <div class="error-container">
+            <div class="error-icon">❌</div>
+            
+            <h1 class="error-title">Verification Failed</h1>
+            
+            <p class="error-message">
+                <%= error || "We couldn't verify your email address. This could be due to several reasons." %>
+            </p>
+            
+            <% if (errorDetails) { %>
+                <div class="error-details">
+                    <h4>📋 Error Details:</h4>
+                    <p style="margin: 0.5rem 0;"><%= errorDetails %></p>
+                </div>
+            <% } %>
+            
+            <div class="solutions">
+                <h3>🔧 Possible Solutions:</h3>
+                <ul>
+                    <li><strong>Check the link:</strong> Make sure you clicked the correct verification link from our email</li>
+                    <li><strong>Link expired:</strong> Verification links expire after 24 hours</li>
+                    <li><strong>Already verified:</strong> Your email might already be verified</li>
+                    <li><strong>Technical issue:</strong> Try again or request a new verification email</li>
+                </ul>
+            </div>
+            
+            <div class="error-code">
+                Error ID: VERIFY-<%= new Date().getTime().toString().slice(-6) %>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 2rem;">
+                <a href="/auth/resend-verification" class="btn btn-primary">
+                    📧 Resend Verification Email
+                </a>
+                <a href="/auth/login" class="btn btn-secondary">
+                    🔑 Try Logging In
+                </a>
+                <a href="/auth/signup" class="btn btn-secondary">
+                    ✨ Create New Account
+                </a>
+            </div>
+            
+            <div style="margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+                <p style="color: var(--text-muted); font-size: 0.9rem;">
+                    ⚠️ If you continue to experience issues, please contact our support team.
+                </p>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">
+                    📞 <a href="mailto:support@shadowcore.app?subject=Verification%20Failed%20[VERIFY-<%= new Date().getTime().toString().slice(-6) %>]" 
+                       style="color: var(--primary);">
+                        Contact Support
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Check if user might be already verified
+        function checkIfVerified() {
+            fetch('/auth/check-status')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.verified) {
+                        // User is already verified, show message
+                        const message = document.createElement('div');
+                        message.innerHTML = `
+                            <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); 
+                                      border-radius: var(--radius); padding: 1rem; margin: 1rem 0;">
+                                <p style="margin: 0; color: #10b981;">
+                                    ✅ Your email appears to be already verified! 
+                                    <a href="/auth/login" style="color: #10b981; font-weight: bold;">Try logging in</a>
+                                </p>
+                            </div>
+                        `;
+                        
+                        document.querySelector('.error-container').insertBefore(
+                            message, 
+                            document.querySelector('.solutions')
+                        );
+                    }
+                })
+                .catch(() => {
+                    // Silently fail
+                });
+        }
+        
+        // Check after page loads
+        setTimeout(checkIfVerified, 1000);
+        
+        // Resend verification with error handling
+        document.querySelector('a[href="/auth/resend-verification"]')?.addEventListener('click', async function(e) {
+            e.preventDefault();
+            
+            const originalText = this.textContent;
+            this.innerHTML = '<span class="loading"></span> Sending...';
+            this.disabled = true;
+            
+            try {
+                // Try to get email from localStorage or cookies
+                let email = localStorage.getItem('pending_verification_email') || 
+                           getCookie('pending_email');
+                
+                if (!email) {
+                    // Prompt for email
+                    email = prompt('Please enter your email address:');
+                    if (!email) {
+                        showNotification('error', 'Email is required');
+                        this.textContent = originalText;
+                        this.disabled = false;
+                        return;
+                    }
+                }
+                
+                const response = await fetch('/auth/resend-verification', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('success', 'New verification email sent! Check your inbox.');
+                    this.textContent = '✅ Email Sent';
+                    
+                    // Redirect to pending page
+                    setTimeout(() => {
+                        window.location.href = `/auth/verify-pending?email=${encodeURIComponent(email)}`;
+                    }, 2000);
+                } else {
+                    showNotification('error', result.error || 'Failed to send email');
+                    this.textContent = originalText;
+                    this.disabled = false;
+                }
+            } catch (error) {
+                showNotification('error', 'Network error. Please try again.');
+                this.textContent = originalText;
+                this.disabled = false;
+            }
+        });
+        
+        // Helper function to get cookie
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+        
+        // Log verification error for analytics
+        if (typeof gtag !== 'undefined') {
+            gtag('event', 'exception', {
+                description: 'Email verification failed',
+                fatal: false
+            });
+        }
+        
+        // Store error in localStorage for debugging
+        localStorage.setItem('last_verification_error', JSON.stringify({
+            error: '<%= error %>',
+            timestamp: new Date().toISOString(),
+            url: window.location.href
+        }));
+    </script>
+</body>
+</html>
