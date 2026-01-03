@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="<%= locals.theme || 'dark' %>">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title || 'ShadowCore' %></title>
+    <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <%- include('partials/header') %>
+    
+    <!-- Hero Section -->
+    <div class="container">
+        <section class="hero">
+            <h1 class="hero-title">🚀 ShadowCore</h1>
+            <p class="hero-subtitle">
+                Universal Plugin Platform with Auto-loading System
+            </p>
+            
+            <% if (user) { %>
+                <div style="margin-top: 2rem;">
+                    <a href="/dashboard" class="btn btn-primary btn-lg">
+                        📊 Go to Dashboard
+                    </a>
+                    <a href="/plugins" class="btn btn-secondary btn-lg">
+                        🧩 Browse Plugins
+                    </a>
+                </div>
+            <% } else { %>
+                <div style="margin-top: 2rem;">
+                    <a href="/auth/signup" class="btn btn-primary btn-lg">
+                        ✨ Get Started Free
+                    </a>
+                    <a href="/auth/login" class="btn btn-secondary btn-lg">
+                        🔑 Login
+                    </a>
+                </div>
+            <% } %>
+        </section>
+        
+        <!-- Features Grid -->
+        <section style="margin: 4rem 0;">
+            <h2 style="text-align: center; margin-bottom: 2rem;">✨ Powerful Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔌</div>
+                    <h3>Universal Plugin System</h3>
+                    <p>Auto-load plugins without restarting. Upload .plugin.js files via admin panel.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🖼️</div>
+                    <h3>Remove Background AI</h3>
+                    <p>Remove backgrounds from images automatically using AI technology.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🎨</div>
+                    <h3>Multiple Themes</h3>
+                    <p>Choose from Dark, Light, Midnight, Ocean, Sunset, and Forest themes.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📧</div>
+                    <h3>Email Verification</h3>
+                    <p>Secure signup with real email verification via Resend.com.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Admin Control Panel</h3>
+                    <p>Full control over plugins, users, settings, and system configuration.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🎵</div>
+                    <h3>Music Player</h3>
+                    <p>Built-in music player with background audio support.</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Active Plugins -->
+        <% if (plugins && plugins.length > 0) { %>
+            <section style="margin: 4rem 0;">
+                <h2 style="text-align: center; margin-bottom: 2rem;">🧩 Active Plugins</h2>
+                <div class="plugins-grid">
+                    <% plugins.forEach(plugin => { %>
+                        <div class="plugin-card">
+                            <div class="plugin-icon">
+                                <%= plugin.icon || '🧩' %>
+                            </div>
+                            <h3><%= plugin.name %></h3>
+                            <p><%= plugin.description || 'No description available' %></p>
+                            <div style="margin-top: 1rem;">
+                                <span class="badge">
+                                    v<%= plugin.version || '1.0.0' %>
+                                </span>
+                                <span class="badge secondary">
+                                    <%= plugin.author || 'Unknown' %>
+                                </span>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+                
+                <div style="text-align: center; margin-top: 2rem;">
+                    <a href="/plugins" class="btn btn-primary">
+                        View All Plugins
+                    </a>
+                </div>
+            </section>
+        <% } %>
+        
+        <!-- Owner Info -->
+        <section style="text-align: center; margin: 4rem 0; padding: 2rem; background: rgba(255,255,255,0.03); border-radius: var(--radius);">
+            <p style="font-family: 'SmallCaps', monospace; color: #a78bfa; margin-bottom: 1rem;">
+                ⎯ʏᴏᴜ ᴀʀᴇ ᴍʏ ʙᴇsᴛ ғʀɪᴇɴᴅ, ᴍʏ ʜᴜᴍᴀɴ ᴅɪᴀʀʏ, ᴀɴᴅ ᴍʏ ᴏᴛʜᴇʀ ʜᴀʟғ𓄹ꠂ🫶🏻🐣🌷♡゙𓂃
+            </p>
+            
+            <div style="display: inline-block; padding: 1.5rem; background: rgba(255,255,255,0.05); border-radius: var(--radius);">
+                <h3>👤 Platform Owner</h3>
+                <div style="margin-top: 1rem;">
+                    <p><strong>Name:</strong> <%= process.env.OWNER_NAME || 'Abdullah' %></p>
+                    <p><strong>Contact:</strong> <%= process.env.OWNER_NUMBER || '+923288055104' %></p>
+                    <p><strong>Email:</strong> <%= process.env.OWNER_EMAIL || 'abdullah@shadowcore.app' %></p>
+                </div>
+            </div>
+        </section>
+    </div>
+    
+    <!-- Footer -->
+    <%- include('partials/footer') %>
+    
+    <!-- Scripts -->
+    <script src="/static/js/main.js"></script>
+    
+    <style>
+        .hero {
+            text-align: center;
+            padding: 6rem 0 4rem;
+        }
+        
+        .hero-title {
+            font-size: 4rem;
+            font-weight: 900;
+            margin-bottom: 1rem;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.5rem;
+            color: #94a3b8;
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        
+        .feature-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: #6366f1;
+        }
+        
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: rgba(99, 102, 241, 0.2);
+            color: #818cf8;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-right: 0.5rem;
+        }
+        
+        .badge.secondary {
+            background: rgba(139, 92, 246, 0.2);
+            color: #a78bfa;
+        }
+    </style>
+</body>
+</html>
