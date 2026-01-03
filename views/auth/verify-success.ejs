@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Verified | ShadowCore</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+    <style>
+        .success-container {
+            max-width: 500px;
+            margin: 4rem auto;
+            padding: 3rem;
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            text-align: center;
+            backdrop-filter: blur(20px);
+        }
+        
+        .success-icon {
+            font-size: 5rem;
+            margin-bottom: 1.5rem;
+            animation: celebrate 1s ease-out;
+        }
+        
+        .success-title {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+            background: linear-gradient(90deg, #10b981, #059669);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .success-message {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+        
+        .next-steps {
+            text-align: left;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-left: 4px solid #10b981;
+        }
+        
+        .next-steps h3 {
+            margin-top: 0;
+            color: #10b981;
+        }
+        
+        .next-steps ul {
+            padding-left: 1.5rem;
+            margin: 0;
+        }
+        
+        .next-steps li {
+            margin-bottom: 0.75rem;
+        }
+        
+        .redirect-countdown {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            margin: 1.5rem 0;
+        }
+        
+        @keyframes celebrate {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        @keyframes confetti {
+            0% { transform: translateY(-100px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+        
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: var(--primary);
+            top: -10px;
+            opacity: 0;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+    <div class="success-container">
+        <div class="success-icon">🎉</div>
+        
+        <h1 class="success-title">Email Verified!</h1>
+        
+        <p class="success-message">
+            <%= message || "Your email has been successfully verified. Your account is now fully activated!" %>
+        </p>
+        
+        <div class="next-steps">
+            <h3>🚀 What's Next?</h3>
+            <ul>
+                <li><strong>Explore Plugins:</strong> Browse and install powerful plugins</li>
+                <li><strong>Customize Profile:</strong> Set up your account preferences</li>
+                <li><strong>Join Community:</strong> Connect with other users</li>
+                <li><strong>Start Creating:</strong> Use our tools to build amazing things</li>
+            </ul>
+        </div>
+        
+        <div class="redirect-countdown" id="countdown">
+            Redirecting to dashboard in <span id="seconds">5</span> seconds...
+        </div>
+        
+        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+            <a href="/dashboard" class="btn btn-primary" style="padding: 0.75rem 2rem;">
+                Go to Dashboard
+            </a>
+            <a href="/plugins" class="btn btn-secondary">
+                Browse Plugins
+            </a>
+            <a href="/profile" class="btn btn-secondary">
+                Setup Profile
+            </a>
+        </div>
+        
+        <div style="margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+            <p style="color: var(--text-muted); font-size: 0.9rem;">
+                📧 Welcome to ShadowCore! We're excited to have you onboard.
+            </p>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">
+                ❓ Need help getting started? 
+                <a href="/help" style="color: var(--primary);">Check our guide</a>
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        // Create confetti effect
+        function createConfetti() {
+            const colors = ['#6366f1', '#8b5cf6', '#10b981', '#f59e0b', '#ec4899'];
+            
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.width = Math.random() * 10 + 5 + 'px';
+                confetti.style.height = Math.random() * 10 + 5 + 'px';
+                confetti.style.animation = `confetti ${Math.random() * 3 + 2}s ease-out forwards`;
+                confetti.style.animationDelay = Math.random() * 1 + 's';
+                
+                document.body.appendChild(confetti);
+                
+                // Remove confetti after animation
+                setTimeout(() => {
+                    confetti.remove();
+                }, 5000);
+            }
+        }
+        
+        // Create confetti on page load
+        setTimeout(createConfetti, 500);
+        
+        // Auto-redirect countdown
+        let seconds = 5;
+        const countdownElement = document.getElementById('seconds');
+        
+        function updateCountdown() {
+            countdownElement.textContent = seconds;
+            
+            if (seconds > 0) {
+                seconds--;
+                setTimeout(updateCountdown, 1000);
+            } else {
+                window.location.href = '/dashboard';
+            }
+        }
+        
+        // Start countdown
+        updateCountdown();
+        
+        // Cancel redirect if user clicks any link
+        document.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                seconds = 999; // Effectively cancel the auto-redirect
+            });
+        });
+        
+        // Play success sound if available
+        function playSuccessSound() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
+                oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.1); // E5
+                oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.2); // G5
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + 0.5);
+            } catch (e) {
+                // Audio context not supported, silent fail
+            }
+        }
+        
+        // Play sound after a short delay
+        setTimeout(playSuccessSound, 1000);
+        
+        // Send verification success event to analytics
+        if (typeof gtag !== 'undefined') {
+            gtag('event', 'sign_up', {
+                method: 'email'
+            });
+        }
+        
+        // Store verification in localStorage
+        localStorage.setItem('email_verified', 'true');
+        localStorage.setItem('verified_at', new Date().toISOString());
+    </script>
+</body>
+</html>
