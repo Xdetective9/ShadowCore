@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management | ShadowCore Admin</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/admin.css">
+    <style>
+        .users-container {
+            margin-top: 2rem;
+        }
+        
+        .users-table {
+            width: 100%;
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+        
+        .users-table th {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .users-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .users-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .users-table tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .user-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .badge-admin {
+            background: rgba(99, 102, 241, 0.2);
+            color: #818cf8;
+        }
+        
+        .badge-user {
+            background: rgba(139, 92, 246, 0.2);
+            color: #a78bfa;
+        }
+        
+        .badge-verified {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+        
+        .badge-unverified {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+        }
+        
+        .user-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .action-btn {
+            padding: 0.5rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+        
+        .search-box {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 0.5rem 0;
+        }
+    </style>
+</head>
+<body>
+    <%- include('../layouts/admin', { currentPage: 'users' }) %>
+    
+    <div class="users-container">
+        <h2>👥 User Management</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+            Manage all registered users on the platform
+        </p>
+        
+        <!-- Stats Cards -->
+        <div class="stats-cards">
+            <div class="stat-card">
+                <div>Total Users</div>
+                <div class="stat-number"><%= stats.totalUsers || 0 %></div>
+            </div>
+            
+            <div class="stat-card">
+                <div>Verified Users</div>
+                <div class="stat-number"><%= stats.verifiedUsers || 0 %></div>
+            </div>
+            
+            <div class="stat-card">
+                <div>Admin Users</div>
+                <div class="stat-number"><%= stats.adminUsers || 0 %></div>
+            </div>
+            
+            <div class="stat-card">
+                <div>Today's Signups</div>
+                <div class="stat-number"><%= stats.todaySignups || 0 %></div>
+            </div>
+        </div>
+        
+        <!-- Search and Bulk Actions -->
+        <div class="search-box">
+            <input type="text" 
+                   id="userSearch" 
+                   class="form-control" 
+                   placeholder="Search users by name or email..."
+                   style="flex: 1;">
+            
+            <select id="bulkAction" class="form-control" style="width: 150px;">
+                <option value="">Bulk Actions</option>
+                <option value="verify">Verify Selected</option>
+                <option value="unverify">Unverify Selected</option>
+                <option value="make_admin">Make Admin</option>
+                <option value="remove_admin">Remove Admin</option>
+                <option value="delete">Delete Selected</option>
+            </select>
+            
+            <button id="bulkApply" class="btn btn-primary">Apply</button>
+        </div>
+        
+        <!-- Users Table -->
+        <table class="users-table">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">
+                        <input type="checkbox" id="selectAll">
+                    </th>
+                    <th>User</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Joined</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% users.forEach(user => { %>
+                    <tr class="user-row" 
+                        data-id="<%= user.id %>"
+                        data-name="<%= user.username || user.email.split('@')[0] %>"
+                        data-email="<%= user.email %>">
+                        <td>
+                            <input type="checkbox" class="user-checkbox" value="<%= user.id %>">
+                        </td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <div class="user-avatar">
+                                    <%= (user.username || user.email).charAt(0).toUpperCase() %>
+                                </div>
+                                <div>
+                                    <div style="font-weight: 600;">
+                                        <%= user.username || user.email.split('@')[0] %>
+                                    </div>
+                                    <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                                        ID: <%= user.id.substring(0, 8) %>...
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td><%= user.email %></td>
+                        <td>
+                            <span class="user-badge <%= user.role === 'admin' ? 'badge-admin' : 'badge-user' %>">
+                                <%= user.role %>
+                            </span>
+                        </td>
+                        <td>
+                            <span class="user-badge <%= user.verified ? 'badge-verified' : 'badge-unverified' %>">
+                                <%= user.verified ? 'Verified' : 'Unverified' %>
+                            </span>
+                        </td>
+                        <td>
+                            <%= new Date(user.createdAt).toLocaleDateString() %>
+                        </td>
+                        <td>
+                            <div class="user-actions">
+                                <button class="action-btn" 
+                                        onclick="viewUser('<%= user.id %>')"
+                                        title="View Profile">
+                                    👁️
+                                </button>
+                                
+                                <% if (!user.verified) { %>
+                                    <button class="action-btn" 
+                                            onclick="verifyUser('<%= user.id %>', '<%= user.email %>')"
+                                            title="Verify User">
+                                        ✅
+                                    </button>
+                                <% } %>
+                                
+                                <% if (user.role !== 'admin') { %>
+                                    <button class="action-btn" 
+                                            onclick="makeAdmin('<%= user.id %>', '<%= user.email %>')"
+                                            title="Make Admin">
+                                        ⚡
+                                    </button>
+                                <% } else { %>
+                                    <button class="action-btn" 
+                                            onclick="removeAdmin('<%= user.id %>', '<%= user.email %>')"
+                                            title="Remove Admin">
+                                        👤
+                                    </button>
+                                <% } %>
+                                
+                                <button class="action-btn" 
+                                        onclick="deleteUser('<%= user.id %>', '<%= user.email.split('@')[0] %>')"
+                                        title="Delete User"
+                                        style="color: #ef4444;">
+                                    🗑️
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+        
+        <% if (users.length === 0) { %>
+            <div style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">👤</div>
+                <h3>No Users Found</h3>
+                <p>Users will appear here once they register on the platform.</p>
+            </div>
+        <% } %>
+    </div>
+    
+    <script>
+        // Search functionality
+        document.getElementById('userSearch').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            document.querySelectorAll('.user-row').forEach(row => {
+                const name = row.dataset.name.toLowerCase();
+                const email = row.dataset.email.toLowerCase();
+                
+                if (name.includes(searchTerm) || email.includes(searchTerm)) {
+                    row.style.display = 'table-row';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+        
+        // Select all checkbox
+        document.getElementById('selectAll').addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.user-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+        
+        // Bulk actions
+        document.getElementById('bulkApply').addEventListener('click', function() {
+            const action = document.getElementById('bulkAction').value;
+            const selectedUsers = Array.from(document.querySelectorAll('.user-checkbox:checked'))
+                .map(cb => cb.value);
+            
+            if (selectedUsers.length === 0) {
+                alert('Please select at least one user');
+                return;
+            }
+            
+            if (!action) {
+                alert('Please select an action');
+                return;
+            }
+            
+            let confirmMessage = '';
+            switch (action) {
+                case 'verify':
+                    confirmMessage = `Verify ${selectedUsers.length} user(s)?`;
+                    break;
+                case 'unverify':
+                    confirmMessage = `Unverify ${selectedUsers.length} user(s)?`;
+                    break;
+                case 'make_admin':
+                    confirmMessage = `Make ${selectedUsers.length} user(s) admin?`;
+                    break;
+                case 'remove_admin':
+                    confirmMessage = `Remove admin from ${selectedUsers.length} user(s)?`;
+                    break;
+                case 'delete':
+                    confirmMessage = `Permanently delete ${selectedUsers.length} user(s)? This cannot be undone!`;
+                    break;
+            }
+            
+            if (!confirm(confirmMessage)) return;
+            
+            fetch('/admin/api/users/bulk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    users: selectedUsers,
+                    action: action
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            });
+        });
+        
+        // User action functions
+        function viewUser(userId) {
+            window.open(`/admin/user/${userId}`, '_blank');
+        }
+        
+        function verifyUser(userId, email) {
+            if (confirm(`Verify user ${email}?`)) {
+                fetch(`/admin/api/users/${userId}/verify`, {
+                    method: 'POST'
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('User verified successfully');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                });
+            }
+        }
+        
+        function makeAdmin(userId, email) {
+            if (confirm(`Make ${email} an admin?`)) {
+                fetch(`/admin/api/users/${userId}/make-admin`, {
+                    method: 'POST'
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('User is now an admin');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                });
+            }
+        }
+        
+        function removeAdmin(userId, email) {
+            if (confirm(`Remove admin privileges from ${email}?`)) {
+                fetch(`/admin/api/users/${userId}/remove-admin`, {
+                    method: 'POST'
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Admin privileges removed');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                });
+            }
+        }
+        
+        function deleteUser(userId, username) {
+            if (confirm(`Permanently delete user "${username}"? This cannot be undone!`)) {
+                fetch(`/admin/api/users/${userId}`, {
+                    method: 'DELETE'
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('User deleted successfully');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>
