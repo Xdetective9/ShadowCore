@@ -1,0 +1,86 @@
+<footer style="background: var(--bg-secondary); border-top: 1px solid var(--border); padding: 3rem 0; margin-top: 4rem;">
+    <div class="container">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem;">
+            <!-- Brand Column -->
+            <div>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                    <span style="font-size: 2rem;">🚀</span>
+                    <h3>ShadowCore</h3>
+                </div>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                    Universal Plugin Platform with Auto-loading System
+                </p>
+                <div style="display: flex; gap: 1rem;">
+                    <a href="https://github.com" style="color: var(--text-secondary);">GitHub</a>
+                    <a href="https://twitter.com" style="color: var(--text-secondary);">Twitter</a>
+                    <a href="/contact" style="color: var(--text-secondary);">Contact</a>
+                </div>
+            </div>
+            
+            <!-- Quick Links -->
+            <div>
+                <h4 style="margin-bottom: 1rem;">Quick Links</h4>
+                <ul style="list-style: none; padding: 0;">
+                    <li style="margin-bottom: 0.5rem;">
+                        <a href="/" style="color: var(--text-secondary);">🏠 Home</a>
+                    </li>
+                    <li style="margin-bottom: 0.5rem;">
+                        <a href="/features" style="color: var(--text-secondary);">✨ Features</a>
+                    </li>
+                    <li style="margin-bottom: 0.5rem;">
+                        <a href="/plugins" style="color: var(--text-secondary);">🧩 Plugins</a>
+                    </li>
+                    <li style="margin-bottom: 0.5rem;">
+                        <a href="/dashboard" style="color: var(--text-secondary);">📊 Dashboard</a>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Account -->
+            <div>
+                <h4 style="margin-bottom: 1rem;">Account</h4>
+                <ul style="list-style: none; padding: 0;">
+                    <% if (user) { %>
+                        <li style="margin-bottom: 0.5rem;">
+                            <a href="/profile" style="color: var(--text-secondary);">👤 Profile</a>
+                        </li>
+                        <li style="margin-bottom: 0.5rem;">
+                            <a href="/settings" style="color: var(--text-secondary);">⚙️ Settings</a>
+                        </li>
+                        <li style="margin-bottom: 0.5rem;">
+                            <a href="/auth/logout" style="color: var(--text-secondary);">🚪 Logout</a>
+                        </li>
+                    <% } else { %>
+                        <li style="margin-bottom: 0.5rem;">
+                            <a href="/auth/login" style="color: var(--text-secondary);">🔑 Login</a>
+                        </li>
+                        <li style="margin-bottom: 0.5rem;">
+                            <a href="/auth/signup" style="color: var(--text-secondary);">✨ Sign Up</a>
+                        </li>
+                        <li style="margin-bottom: 0.5rem;">
+                            <a href="/auth/forgot" style="color: var(--text-secondary);">🔓 Forgot Password</a>
+                        </li>
+                    <% } %>
+                </ul>
+            </div>
+            
+            <!-- Contact Info -->
+            <div>
+                <h4 style="margin-bottom: 1rem;">Contact</h4>
+                <div style="color: var(--text-secondary);">
+                    <p style="margin-bottom: 0.5rem;">📧 support@shadowcore.app</p>
+                    <p style="margin-bottom: 0.5rem;">🌐 https://shadowcore.app</p>
+                    <p style="margin-bottom: 0.5rem;">🕐 24/7 Support</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Copyright -->
+        <div style="text-align: center; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border); color: var(--text-muted);">
+            <p>© <%= new Date().getFullYear() %> ShadowCore. All rights reserved.</p>
+            <p style="font-size: 0.9rem; margin-top: 0.5rem;">
+                Version 3.0.0 | Built with ❤️ for the community
+            </p>
+        </div>
+    </div>
+</footer>
