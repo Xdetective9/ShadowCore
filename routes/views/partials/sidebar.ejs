@@ -1,0 +1,200 @@
+<!-- Desktop Sidebar -->
+<aside class="sidebar" style="display: none;">
+    <div class="sidebar-content">
+        <!-- User Info -->
+        <% if (user) { %>
+            <div class="sidebar-user">
+                <div style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                    <%= (user.username || user.email).charAt(0).toUpperCase() %>
+                </div>
+                <div>
+                    <div style="font-weight: bold;"><%= user.username || user.email.split('@')[0] %></div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                        <%= user.role === 'admin' ? '⚡ Admin' : '👤 User' %>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+        
+        <!-- Quick Actions -->
+        <div class="sidebar-section">
+            <h4>🚀 Quick Actions</h4>
+            <a href="/plugins" class="sidebar-link">
+                <span>🧩</span> Browse Plugins
+            </a>
+            <a href="/dashboard" class="sidebar-link">
+                <span>📊</span> Dashboard
+            </a>
+            <a href="/themes" class="sidebar-link">
+                <span>🎨</span> Change Theme
+            </a>
+        </div>
+        
+        <!-- Active Plugins -->
+        <% if (plugins && plugins.length > 0) { %>
+            <div class="sidebar-section">
+                <h4>🔌 Active Plugins</h4>
+                <% plugins.filter(p => p.enabled).slice(0, 5).forEach(plugin => { %>
+                    <a href="/plugins/<%= plugin.id %>" class="sidebar-link">
+                        <span><%= plugin.icon || '🧩' %></span> 
+                        <%= plugin.name %>
+                    </a>
+                <% }) %>
+                <% if (plugins.filter(p => p.enabled).length > 5) { %>
+                    <a href="/plugins" class="sidebar-link" style="color: var(--text-muted); font-size: 0.9rem;">
+                        View all <%= plugins.filter(p => p.enabled).length %> plugins...
+                    </a>
+                <% } %>
+            </div>
+        <% } %>
+        
+        <!-- System Status -->
+        <div class="sidebar-section">
+            <h4>⚡ System Status</h4>
+            <div class="status-item">
+                <span class="status-indicator active"></span>
+                <span>Core System</span>
+            </div>
+            <div class="status-item">
+                <span class="status-indicator active"></span>
+                <span>Plugin Engine</span>
+            </div>
+            <div class="status-item">
+                <span class="status-indicator active"></span>
+                <span>Database</span>
+            </div>
+        </div>
+        
+        <!-- Music Player (Mini) -->
+        <div class="sidebar-section" id="miniMusicPlayer" style="display: none;">
+            <h4>🎵 Now Playing</h4>
+            <div id="miniPlayerContent"></div>
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                <button class="btn btn-sm" onclick="toggleMusic()">⏸️</button>
+                <button class="btn btn-sm" onclick="stopMusic()">⏹️</button>
+            </div>
+        </div>
+    </div>
+</aside>
+
+<style>
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 70px;
+        width: 250px;
+        height: calc(100vh - 70px);
+        background: var(--bg-secondary);
+        border-right: 1px solid var(--border);
+        overflow-y: auto;
+        padding: 1.5rem;
+        z-index: 900;
+    }
+    
+    .sidebar-user {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border);
+    }
+    
+    .sidebar-section {
+        margin-bottom: 2rem;
+    }
+    
+    .sidebar-section h4 {
+        margin-bottom: 1rem;
+        color: var(--text-primary);
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .sidebar-link {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem;
+        color: var(--text-secondary);
+        text-decoration: none;
+        border-radius: var(--radius-sm);
+        transition: all 0.3s ease;
+        margin-bottom: 0.25rem;
+    }
+    
+    .sidebar-link:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-primary);
+    }
+    
+    .status-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .status-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #ef4444;
+    }
+    
+    .status-indicator.active {
+        background: #10b981;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    
+    @media (min-width: 1024px) {
+        .sidebar {
+            display: block;
+        }
+        
+        main.container {
+            margin-left: 250px;
+            width: calc(100% - 250px);
+        }
+    }
+</style>
+
+<script>
+    // Music player functions
+    function toggleMusic() {
+        const audio = document.getElementById('musicAudio');
+        if (audio.paused) {
+            audio.play();
+        } else {
+            audio.pause();
+        }
+    }
+    
+    function stopMusic() {
+        const audio = document.getElementById('musicAudio');
+        audio.pause();
+        audio.currentTime = 0;
+        document.getElementById('miniMusicPlayer').style.display = 'none';
+    }
+    
+    // Listen for music events
+    if (typeof socket !== 'undefined') {
+        socket.on('music_play', (data) => {
+            const miniPlayer = document.getElementById('miniMusicPlayer');
+            const content = document.getElementById('miniPlayerContent');
+            
+            miniPlayer.style.display = 'block';
+            content.innerHTML = `
+                <div style="font-weight: bold;">${data.title}</div>
+                <div style="font-size: 0.8rem; color: var(--text-secondary);">${data.artist}</div>
+            `;
+        });
+    }
+</script>
