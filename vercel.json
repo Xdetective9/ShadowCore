@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "index.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": ["**"],
+        "maxLambdaSize": "50mb"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "SESSION_SECRET": "@session_secret",
+    "RESEND_API_KEY": "re_KLNiEivw_CKWPC6uskbxrNP1n2chKVBv2",
+    "REMOVEBG_API_KEY": "xv5aoeuirxTNZBYS5KykZZEK",
+    "ADMIN_PASSWORD": "Rana0986"
+  }
+}
