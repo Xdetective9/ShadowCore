@@ -188,4 +188,713 @@
                             
                             <div class="form-group">
                                 <label>SMTP Security</label>
-                                <select name="smtp_secure
+                                <select name="smtp_secure" class="form-control">
+                                    <option value="true" <%= env.SMTP_SECURE === 'true' ? 'selected' : '' %>>TLS</option>
+                                    <option value="false" <%= env.SMTP_SECURE === 'false' ? 'selected' : '' %>>None</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div class="form-group">
+                                <label>SMTP Username</label>
+                                <input type="text" name="smtp_user" class="form-control" 
+                                       value="<%= env.SMTP_USER || '' %>">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>SMTP Password</label>
+                                <input type="password" name="smtp_pass" class="form-control" 
+                                       value="<%= env.SMTP_PASS || '' %>">
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem;">
+                            <button type="submit" class="btn btn-primary">💾 Save Email Settings</button>
+                            <button type="button" onclick="testEmailSettings()" class="btn btn-secondary">📧 Test Email</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Security Settings -->
+            <div id="security-tab" class="settings-panel">
+                <div class="card">
+                    <h3 style="margin-bottom: 1.5rem;">🔒 Security Settings</h3>
+                    
+                    <form id="securitySettingsForm" onsubmit="saveSecuritySettings(event)">
+                        <div class="form-group">
+                            <label>Session Secret</label>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <input type="password" name="session_secret" class="form-control" 
+                                       value="<%= env.SESSION_SECRET || '' %>" readonly>
+                                <button type="button" onclick="generateSecret('session_secret')" class="btn btn-secondary">
+                                    🔄 Generate
+                                </button>
+                            </div>
+                            <small style="color: var(--text-muted);">Used to encrypt session data</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Password Pepper</label>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <input type="password" name="pepper" class="form-control" 
+                                       value="<%= env.PEPPER || '' %>" readonly>
+                                <button type="button" onclick="generateSecret('pepper')" class="btn btn-secondary">
+                                    🔄 Generate
+                                </button>
+                            </div>
+                            <small style="color: var(--text-muted);">Additional password hashing secret</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Admin Password</label>
+                            <input type="password" name="admin_password" class="form-control" 
+                                   value="<%= env.ADMIN_PASSWORD || 'Rana0986' %>">
+                            <small style="color: var(--text-muted);">Password for admin panel access</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Rate Limiting</label>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div>
+                                    <label>Requests per 15min</label>
+                                    <input type="number" name="rate_limit" class="form-control" 
+                                           value="<%= env.RATE_LIMIT || '100' %>">
+                                </div>
+                                <div>
+                                    <label>Login Attempts</label>
+                                    <input type="number" name="login_attempts" class="form-control" 
+                                           value="<%= env.LOGIN_ATTEMPTS || '5' %>">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Security Headers</label>
+                            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <input type="checkbox" name="csp" id="csp" 
+                                           <%= env.CSP !== 'false' ? 'checked' : '' %>>
+                                    <label for="csp">Content Security Policy (CSP)</label>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <input type="checkbox" name="hsts" id="hsts" 
+                                           <%= env.HSTS !== 'false' ? 'checked' : '' %>>
+                                    <label for="hsts">HTTP Strict Transport Security (HSTS)</label>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <input type="checkbox" name="xss" id="xss" 
+                                           <%= env.XSS_PROTECTION !== 'false' ? 'checked' : '' %>>
+                                    <label for="xss">XSS Protection</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>API Security</label>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" name="api_keys" id="api_keys" 
+                                       <%= env.API_KEYS === 'true' ? 'checked' : '' %>>
+                                <label for="api_keys">Require API keys for plugin access</label>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem;">
+                            <button type="submit" class="btn btn-primary">💾 Save Security Settings</button>
+                            <button type="button" onclick="runSecurityScan()" class="btn btn-secondary">🔍 Security Scan</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Plugin Settings -->
+            <div id="plugins-tab" class="settings-panel">
+                <div class="card">
+                    <h3 style="margin-bottom: 1.5rem;">🧩 Plugin Settings</h3>
+                    
+                    <form id="pluginSettingsForm" onsubmit="savePluginSettings(event)">
+                        <div class="form-group">
+                            <label>Plugin Auto-load</label>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" name="plugin_autoload" id="plugin_autoload" 
+                                       <%= env.PLUGIN_AUTOLOAD !== 'false' ? 'checked' : '' %>>
+                                <label for="plugin_autoload">Auto-load plugins on startup</label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Plugin Hot-reload</label>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" name="plugin_hotreload" id="plugin_hotreload" 
+                                       <%= env.PLUGIN_HOTRELOAD === 'true' ? 'checked' : '' %>>
+                                <label for="plugin_hotreload">Enable plugin hot-reloading</label>
+                            </div>
+                            <small style="color: var(--text-muted);">Allows plugins to be reloaded without restarting server</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Plugin Directory</label>
+                            <input type="text" name="plugin_dir" class="form-control" 
+                                   value="<%= env.PLUGIN_DIR || './plugins' %>">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Maximum Plugin Size</label>
+                            <input type="number" name="max_plugin_size" class="form-control" 
+                                   value="<%= env.MAX_PLUGIN_SIZE || '50' %>">
+                            <small style="color: var(--text-muted);">Maximum plugin file size in MB</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Allowed Plugin Extensions</label>
+                            <input type="text" name="plugin_extensions" class="form-control" 
+                                   value="<%= env.PLUGIN_EXTENSIONS || '.plugin.js' %>">
+                            <small style="color: var(--text-muted);">Comma-separated list of allowed extensions</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Plugin Approval</label>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" name="plugin_approval" id="plugin_approval" 
+                                       <%= env.PLUGIN_APPROVAL === 'true' ? 'checked' : '' %>>
+                                <label for="plugin_approval">Require admin approval for new plugins</label>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(99, 102, 241, 0.05); border-radius: 8px;">
+                            <h4>Plugin API Keys</h4>
+                            <div class="form-group">
+                                <label>Remove.bg API Key</label>
+                                <input type="password" name="removebg_api_key" class="form-control" 
+                                       value="<%= env.REMOVEBG_API_KEY || 'xv5aoeuirxTNZBYS5KykZZEK' %>">
+                            </div>
+                            
+                            <!-- More plugin API keys would be added here dynamically -->
+                        </div>
+                        
+                        <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem;">
+                            <button type="submit" class="btn btn-primary">💾 Save Plugin Settings</button>
+                            <button type="button" onclick="scanPlugins()" class="btn btn-secondary">🔍 Scan Plugins</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Environment Variables -->
+            <div id="env-tab" class="settings-panel">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h3>⚡ Environment Variables</h3>
+                        <button onclick="addEnvVariable()" class="btn btn-primary">➕ Add Variable</button>
+                    </div>
+                    
+                    <div id="envVariablesList">
+                        <!-- Environment variables will be loaded here -->
+                        <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                            <div class="loading"></div>
+                            <p>Loading environment variables...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Backup Settings -->
+            <div id="backup-tab" class="settings-panel">
+                <div class="card">
+                    <h3 style="margin-bottom: 1.5rem;">💾 Backup & Restore</h3>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <!-- Backup Section -->
+                        <div>
+                            <h4 style="margin-bottom: 1rem;">📤 Backup</h4>
+                            
+                            <div class="form-group">
+                                <label>Backup Frequency</label>
+                                <select id="backupFrequency" class="form-control">
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                    <option value="manual">Manual Only</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>What to backup</label>
+                                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <input type="checkbox" id="backupDatabase" checked>
+                                        <label for="backupDatabase">Database</label>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <input type="checkbox" id="backupPlugins" checked>
+                                        <label for="backupPlugins">Plugins</label>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <input type="checkbox" id="backupUploads">
+                                        <label for="backupUploads">Uploads</label>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <input type="checkbox" id="backupLogs">
+                                        <label for="backupLogs">Logs</label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                                <button onclick="createBackup()" class="btn btn-primary">💾 Create Backup</button>
+                                <button onclick="scheduleBackup()" class="btn btn-secondary">⏰ Schedule</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Restore Section -->
+                        <div>
+                            <h4 style="margin-bottom: 1rem;">📥 Restore</h4>
+                            
+                            <div class="form-group">
+                                <label>Select Backup File</label>
+                                <input type="file" id="backupFile" class="form-control" accept=".zip,.tar,.gz">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Restore Options</label>
+                                <select id="restoreOption" class="form-control">
+                                    <option value="full">Full Restore</option>
+                                    <option value="database">Database Only</option>
+                                    <option value="plugins">Plugins Only</option>
+                                    <option value="settings">Settings Only</option>
+                                </select>
+                            </div>
+                            
+                            <div style="margin-top: 1rem;">
+                                <button onclick="restoreBackup()" class="btn btn-warning" style="width: 100%;">
+                                    🔄 Restore from Backup
+                                </button>
+                                <small style="color: var(--text-muted); display: block; margin-top: 0.5rem;">
+                                    ⚠️ This will overwrite existing data
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Backup List -->
+                    <div style="margin-top: 2rem;">
+                        <h4 style="margin-bottom: 1rem;">📋 Recent Backups</h4>
+                        <div id="backupList" style="min-height: 100px;">
+                            <!-- Backup list will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        // Tab navigation
+        function showTab(tabId) {
+            // Hide all tabs
+            document.querySelectorAll('.settings-panel').forEach(panel => {
+                panel.classList.remove('active');
+            });
+            
+            // Remove active class from all tab buttons
+            document.querySelectorAll('.settings-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(`${tabId}-tab`).classList.add('active');
+            
+            // Activate tab button
+            event.target.classList.add('active');
+            
+            // Load data for specific tabs
+            if (tabId === 'env') {
+                loadEnvVariables();
+            } else if (tabId === 'backup') {
+                loadBackupList();
+            }
+        }
+        
+        // General Settings
+        function saveGeneralSettings(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            
+            fetch('/admin/api/settings/general', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('success', data.message);
+                } else {
+                    showNotification('error', data.error);
+                }
+            });
+        }
+        
+        function resetGeneralSettings() {
+            if (confirm('Reset general settings to defaults?')) {
+                fetch('/admin/api/settings/general/reset', {
+                    method: 'POST'
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('success', data.message);
+                        setTimeout(() => location.reload(), 1000);
+                    }
+                });
+            }
+        }
+        
+        // Email Settings
+        function saveEmailSettings(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            
+            fetch('/admin/api/settings/email', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('success', data.message);
+                } else {
+                    showNotification('error', data.error);
+                }
+            });
+        }
+        
+        function testEmailSettings() {
+            const email = prompt('Enter email address to test:');
+            if (email) {
+                fetch('/admin/api/settings/email/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('success', 'Test email sent successfully!');
+                    } else {
+                        showNotification('error', data.error);
+                    }
+                });
+            }
+        }
+        
+        // Security Settings
+        function saveSecuritySettings(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            
+            fetch('/admin/api/settings/security', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('success', data.message);
+                } else {
+                    showNotification('error', data.error);
+                }
+            });
+        }
+        
+        function generateSecret(fieldName) {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?';
+            let secret = '';
+            for (let i = 0; i < 32; i++) {
+                secret += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            
+            document.querySelector(`[name="${fieldName}"]`).value = secret;
+            showNotification('success', 'New secret generated!');
+        }
+        
+        function runSecurityScan() {
+            showNotification('info', 'Running security scan...');
+            
+            fetch('/admin/api/security/scan')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        let message = 'Security scan completed:\n';
+                        data.results.forEach(result => {
+                            message += `${result.check}: ${result.status}\n`;
+                        });
+                        alert(message);
+                    } else {
+                        showNotification('error', data.error);
+                    }
+                });
+        }
+        
+        // Plugin Settings
+        function savePluginSettings(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            
+            fetch('/admin/api/settings/plugins', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('success', data.message);
+                } else {
+                    showNotification('error', data.error);
+                }
+            });
+        }
+        
+        function scanPlugins() {
+            showNotification('info', 'Scanning plugins...');
+            
+            fetch('/admin/api/plugins/scan')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('success', `Found ${data.plugins.length} plugins`);
+                    } else {
+                        showNotification('error', data.error);
+                    }
+                });
+        }
+        
+        // Environment Variables
+        function loadEnvVariables() {
+            fetch('/admin/api/settings/env')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const envList = document.getElementById('envVariablesList');
+                        envList.innerHTML = '';
+                        
+                        Object.entries(data.env).forEach(([key, value]) => {
+                            const row = document.createElement('div');
+                            row.className = 'env-var-row';
+                            row.innerHTML = `
+                                <div>
+                                    <strong>${key}</strong>
+                                </div>
+                                <div>
+                                    <input type="text" class="form-control" value="${value}" 
+                                           onchange="updateEnvVariable('${key}', this.value)">
+                                </div>
+                                <div>
+                                    <button onclick="deleteEnvVariable('${key}')" class="btn btn-sm btn-danger">
+                                        🗑️
+                                    </button>
+                                </div>
+                            `;
+                            envList.appendChild(row);
+                        });
+                    }
+                });
+        }
+        
+        function updateEnvVariable(key, value) {
+            fetch('/admin/api/settings/env/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key, value })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('success', 'Environment variable updated');
+                }
+            });
+        }
+        
+        function deleteEnvVariable(key) {
+            if (confirm(`Delete environment variable "${key}"?`)) {
+                fetch('/admin/api/settings/env/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('success', data.message);
+                        loadEnvVariables();
+                    }
+                });
+            }
+        }
+        
+        function addEnvVariable() {
+            const key = prompt('Enter variable name:');
+            if (key) {
+                const value = prompt('Enter variable value:');
+                if (value !== null) {
+                    fetch('/admin/api/settings/env/add', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ key, value })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            showNotification('success', data.message);
+                            loadEnvVariables();
+                        }
+                    });
+                }
+            }
+        }
+        
+        // Backup & Restore
+        function loadBackupList() {
+            fetch('/admin/api/backup/list')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const backupList = document.getElementById('backupList');
+                        backupList.innerHTML = '';
+                        
+                        if (data.backups.length === 0) {
+                            backupList.innerHTML = '<p style="color: var(--text-secondary); text-align: center;">No backups found</p>';
+                            return;
+                        }
+                        
+                        data.backups.forEach(backup => {
+                            const backupItem = document.createElement('div');
+                            backupItem.className = 'card';
+                            backupItem.style.marginBottom = '0.5rem';
+                            backupItem.innerHTML = `
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <strong>${backup.name}</strong>
+                                        <div style="font-size: 0.9rem; color: var(--text-secondary);">
+                                            ${new Date(backup.date).toLocaleString()} • ${backup.size}
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; gap: 0.5rem;">
+                                        <button onclick="downloadBackup('${backup.name}')" class="btn btn-sm btn-secondary">
+                                            📥
+                                        </button>
+                                        <button onclick="deleteBackup('${backup.name}')" class="btn btn-sm btn-danger">
+                                            🗑️
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                            backupList.appendChild(backupItem);
+                        });
+                    }
+                });
+        }
+        
+        function createBackup() {
+            showNotification('info', 'Creating backup...');
+            
+            const includeDatabase = document.getElementById('backupDatabase').checked;
+            const includePlugins = document.getElementById('backupPlugins').checked;
+            const includeUploads = document.getElementById('backupUploads').checked;
+            const includeLogs = document.getElementById('backupLogs').checked;
+            
+            fetch('/admin/api/backup/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    database: includeDatabase,
+                    plugins: includePlugins,
+                    uploads: includeUploads,
+                    logs: includeLogs
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('success', 'Backup created successfully!');
+                    loadBackupList();
+                } else {
+                    showNotification('error', data.error);
+                }
+            });
+        }
+        
+        function scheduleBackup() {
+            const frequency = document.getElementById('backupFrequency').value;
+            
+            fetch('/admin/api/backup/schedule', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ frequency })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('success', `Backup scheduled ${frequency}`);
+                }
+            });
+        }
+        
+        function downloadBackup(filename) {
+            window.open(`/admin/api/backup/download/${filename}`, '_blank');
+        }
+        
+        function deleteBackup(filename) {
+            if (confirm(`Delete backup "${filename}"?`)) {
+                fetch(`/admin/api/backup/delete/${filename}`, {
+                    method: 'DELETE'
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('success', data.message);
+                        loadBackupList();
+                    }
+                });
+            }
+        }
+        
+        function restoreBackup() {
+            const fileInput = document.getElementById('backupFile');
+            const restoreOption = document.getElementById('restoreOption').value;
+            
+            if (!fileInput.files.length) {
+                showNotification('error', 'Please select a backup file');
+                return;
+            }
+            
+            if (!confirm(`Restore ${restoreOption} from backup? This will overwrite existing data.`)) {
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('backup', fileInput.files[0]);
+            formData.append('option', restoreOption);
+            
+            showNotification('info', 'Restoring backup...');
+            
+            fetch('/admin/api/backup/restore', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('success', 'Backup restored successfully!');
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    showNotification('error', data.error);
+                }
+            });
+        }
+        
+        // Load environment variables on page load
+        document.addEventListener('DOMContentLoaded', loadEnvVariables);
+    </script>
+</body>
+</html>
