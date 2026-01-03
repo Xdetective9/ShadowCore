@@ -1,6 +1,4 @@
 // ========== SHADOWCORE v3.0 - UNIVERSAL PLATFORM ==========
-// Auto-loads plugins, routes, and dependencies WITHOUT manual changes
-
 const express = require('express');
 const path = require('path');
 const fs = require('fs').promises;
@@ -10,7 +8,7 @@ require('dotenv').config();
 class ShadowCore {
     constructor() {
         this.app = express();
-        this.port = process.env.PORT || 3000;
+        this.port = process.env.PORT || 10000;
         this.plugins = new Map();
         this.routes = new Map();
         this.middlewares = [];
@@ -18,26 +16,16 @@ class ShadowCore {
         this.theme = 'dark';
         this.io = null;
         
-        // Create required directories
-        this.dirs = ['plugins', 'uploads', 'public', 'views', 'logs', 'temp'];
+        this.dirs = ['plugins', 'uploads', 'public', 'views', 'logs', 'temp', 'data'];
     }
 
     async initialize() {
         console.log('🚀 ShadowCore v3.0 Initializing...');
         
-        // Create directories
         await this.createDirectories();
-        
-        // Load core modules
         await this.loadCore();
-        
-        // Load all plugins
         await this.loadPlugins();
-        
-        // Auto-install dependencies
         await this.installDependencies();
-        
-        // Setup server
         await this.setupServer();
         
         console.log('✅ ShadowCore Ready! All systems operational.');
@@ -47,77 +35,85 @@ class ShadowCore {
         for (const dir of this.dirs) {
             try {
                 await fs.mkdir(path.join(__dirname, dir), { recursive: true });
-            } catch (err) {
-                // Directory exists
-            }
+            } catch (err) {}
         }
     }
 
     async loadCore() {
-        // Load database (simple, no foreign key issues)
         const Database = require('./core/database');
         this.db = new Database();
         await this.db.init();
         
-        // Load email service
         const EmailService = require('./core/emailService');
         this.email = new EmailService();
         
-        // Load authentication
         const Auth = require('./core/auth');
         this.auth = new Auth(this.db);
         
-        // Setup express
         this.setupExpress();
-        
-        // Load core routes
         this.loadCoreRoutes();
     }
 
     setupExpress() {
-        // Security middleware
         this.app.use(require('helmet')());
         this.app.use(require('cors')());
         this.app.use(require('compression')());
         
-        // Body parsing
         this.app.use(require('express').json({ limit: '50mb' }));
         this.app.use(require('express').urlencoded({ extended: true, limit: '50mb' }));
         
-        // Session with simple memory store (no DB errors)
         this.app.use(require('express-session')({
             secret: process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex'),
             resave: false,
             saveUninitialized: false,
+            store: new (require('memorystore')(require('express-session')))({
+                checkPeriod: 86400000
+            }),
             cookie: { 
                 secure: process.env.NODE_ENV === 'production',
                 maxAge: 7 * 24 * 60 * 60 * 1000 
             }
         }));
         
-        // File upload
         this.app.use(require('express-fileupload')({
             useTempFiles: true,
             tempFileDir: '/tmp/'
         }));
         
-        // View engine
         this.app.set('view engine', 'ejs');
         this.app.set('views', [
             path.join(__dirname, 'views'),
-            path.join(__dirname, 'plugins/views') // Plugin views
+            path.join(__dirname, 'plugins/views')
         ]);
         
-        // Static files
         this.app.use('/static', require('express').static(path.join(__dirname, 'public')));
         this.app.use('/plugin-assets', require('express').static(path.join(__dirname, 'plugins/assets')));
         
-        // Global variables
+        // FIX: Add currentPage middleware
         this.app.use((req, res, next) => {
+            // Determine current page from URL
+            let currentPage = 'home';
+            const path = req.path;
+            
+            if (path === '/') currentPage = 'home';
+            else if (path.startsWith('/features')) currentPage = 'features';
+            else if (path.startsWith('/plugins')) currentPage = 'plugins';
+            else if (path.startsWith('/dashboard')) currentPage = 'dashboard';
+            else if (path.startsWith('/admin')) currentPage = 'admin';
+            else if (path.startsWith('/auth/login')) currentPage = 'login';
+            else if (path.startsWith('/auth/signup')) currentPage = 'signup';
+            else if (path.startsWith('/profile')) currentPage = 'profile';
+            else if (path.startsWith('/settings')) currentPage = 'settings';
+            
+            // Set global template variables
             res.locals.user = req.session.user;
             res.locals.theme = req.cookies?.theme || 'dark';
             res.locals.plugins = Array.from(this.plugins.values());
             res.locals.siteName = 'ShadowCore';
+            res.locals.currentPage = currentPage; // FIX: Add this line
+            res.locals.ownerName = process.env.OWNER_NAME || 'Abdullah';
+            res.locals.ownerNumber = process.env.OWNER_NUMBER || '+923288055104';
+            
             next();
         });
     }
@@ -142,7 +138,6 @@ class ShadowCore {
 
     async loadPlugin(filePath) {
         try {
-            // Clear require cache to allow hot reload
             delete require.cache[require.resolve(filePath)];
             
             const pluginModule = require(filePath);
@@ -160,20 +155,16 @@ class ShadowCore {
                 file: filePath,
                 module: pluginModule,
                 loadedAt: new Date(),
-                // Plugin can define its own dependencies
                 dependencies: pluginModule.dependencies || [],
-                // Plugin can define required env vars
                 env: pluginModule.requiredEnv || []
             };
             
-            // Check if plugin is enabled in database
             const dbEnabled = await this.db.getPluginStatus(pluginId);
             if (dbEnabled === false) {
                 console.log(`⏸️  Plugin ${plugin.name} is disabled in database`);
                 return;
             }
             
-            // Initialize plugin
             if (typeof pluginModule.init === 'function') {
                 const initResult = await pluginModule.init({
                     app: this.app,
@@ -188,25 +179,19 @@ class ShadowCore {
                 console.log(`✅ Plugin initialized: ${plugin.name} v${plugin.version}`);
             }
             
-            // Register plugin routes
             if (pluginModule.routes && Array.isArray(pluginModule.routes)) {
                 this.registerPluginRoutes(plugin);
             }
             
-            // Register plugin middleware
             if (pluginModule.middleware && Array.isArray(pluginModule.middleware)) {
                 this.registerPluginMiddleware(plugin);
             }
             
-            // Add plugin dependencies
             if (plugin.dependencies && plugin.dependencies.length > 0) {
                 plugin.dependencies.forEach(dep => this.dependencies.add(dep));
             }
             
-            // Store plugin
             this.plugins.set(pluginId, plugin);
-            
-            // Add to database
             await this.db.savePlugin(plugin);
             
         } catch (err) {
@@ -219,7 +204,6 @@ class ShadowCore {
             const method = (route.method || 'GET').toLowerCase();
             const path = `/api/plugins/${plugin.id}${route.path}`;
             
-            // Add authentication middleware if specified
             const handlers = [];
             
             if (route.auth) {
@@ -267,7 +251,6 @@ class ShadowCore {
         console.log('📦 Installing plugin dependencies...');
         const deps = Array.from(this.dependencies);
         
-        // Update package.json
         const packagePath = path.join(__dirname, 'package.json');
         const packageData = JSON.parse(await fs.readFile(packagePath, 'utf8'));
         
@@ -279,9 +262,6 @@ class ShadowCore {
         
         await fs.writeFile(packagePath, JSON.stringify(packageData, null, 2));
         console.log('✅ Updated package.json with plugin dependencies');
-        
-        // Note: Actual npm install should be done manually or via deployment script
-        // This prevents permission issues on hosting platforms
     }
 
     loadCoreRoutes() {
@@ -295,12 +275,33 @@ class ShadowCore {
             });
         });
         
-        // Home page
+        // Home page - FIXED: Pass currentPage
         this.app.get('/', (req, res) => {
             res.render('index', {
                 title: 'ShadowCore | Universal Plugin Platform',
                 user: req.session.user,
-                plugins: Array.from(this.plugins.values())
+                plugins: Array.from(this.plugins.values()),
+                currentPage: 'home' // FIX: Add this
+            });
+        });
+        
+        // Features page - FIXED: Pass currentPage
+        this.app.get('/features', (req, res) => {
+            res.render('features', {
+                title: 'Features | ShadowCore',
+                user: req.session.user,
+                plugins: Array.from(this.plugins.values()),
+                currentPage: 'features' // FIX: Add this
+            });
+        });
+        
+        // Plugins page - FIXED: Pass currentPage
+        this.app.get('/plugins', (req, res) => {
+            res.render('plugins/index', {
+                title: 'Plugins | ShadowCore',
+                user: req.session.user,
+                plugins: Array.from(this.plugins.values()),
+                currentPage: 'plugins' // FIX: Add this
             });
         });
         
@@ -311,7 +312,6 @@ class ShadowCore {
     autoLoadRoutes() {
         const routesDir = path.join(__dirname, 'routes');
         
-        // Dynamically require all route files
         ['auth', 'admin', 'api', 'user'].forEach(routeFile => {
             try {
                 const routePath = path.join(routesDir, `${routeFile}.js`);
@@ -327,11 +327,12 @@ class ShadowCore {
     }
 
     async setupServer() {
-        // Error handling
+        // Error handling with currentPage
         this.app.use((req, res) => {
             res.status(404).render('error/404', {
                 title: '404 - Not Found',
-                message: 'The page you requested does not exist.'
+                message: 'The page you requested does not exist.',
+                currentPage: '404' // FIX: Add this
             });
         });
         
@@ -339,11 +340,11 @@ class ShadowCore {
             console.error('Server error:', err);
             res.status(500).render('error/500', {
                 title: '500 - Server Error',
-                message: 'Something went wrong on our end.'
+                message: 'Something went wrong on our end.',
+                currentPage: 'error' // FIX: Add this
             });
         });
         
-        // Start server
         this.app.listen(this.port, () => {
             console.log(`
 ╔══════════════════════════════════════════════════════════╗
@@ -368,7 +369,6 @@ class ShadowCore {
     }
 }
 
-// Start ShadowCore
 const shadowcore = new ShadowCore();
 shadowcore.initialize().catch(console.error);
 
