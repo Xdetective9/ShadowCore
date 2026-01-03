@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="<%= locals.theme || 'dark' %>">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title || 'ShadowCore' %></title>
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/static/css/main.css">
+    <% if (locals.pluginCss) { %>
+        <style><%= locals.pluginCss %></style>
+    <% } %>
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
+    
+    <!-- Theme color -->
+    <meta name="theme-color" content="#6366f1">
+    
+    <!-- PWA -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <!-- Custom CSS for page -->
+    <% if (locals.customCss) { %>
+        <style><%= locals.customCss %></style>
+    <% } %>
+</head>
+<body>
+    <!-- Navigation -->
+    <%- include('../partials/header') %>
+    
+    <!-- Sidebar (for desktop) -->
+    <%- include('../partials/sidebar') %>
+    
+    <!-- Main Content -->
+    <main class="container" style="margin-top: 80px; padding: 2rem; min-height: calc(100vh - 200px);">
+        <!-- Notifications -->
+        <%- include('../partials/notifications') %>
+        
+        <!-- Page Content -->
+        <%- body %>
+    </main>
+    
+    <!-- Footer -->
+    <%- include('../partials/footer') %>
+    
+    <!-- Music Player (Fixed position) -->
+    <div id="musicPlayer" class="music-player" style="display: none;">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <button id="musicToggle" class="btn btn-sm">⏸️</button>
+            <div style="flex: 1;">
+                <div id="musicTitle" style="font-weight: bold;"></div>
+                <div id="musicArtist" style="font-size: 0.9rem; color: #94a3b8;"></div>
+            </div>
+            <button id="musicClose" class="btn btn-sm">✕</button>
+        </div>
+        <audio id="musicAudio" controls style="width: 100%; margin-top: 0.5rem;"></audio>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="/static/js/main.js"></script>
+    <script src="/static/js/theme.js"></script>
+    
+    <% if (locals.pluginJs) { %>
+        <script><%= locals.pluginJs %></script>
+    <% } %>
+    
+    <% if (locals.customJs) { %>
+        <script><%= locals.customJs %></script>
+    <% } %>
+    
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script>
+        // Initialize Socket.IO
+        const socket = io();
+        
+        // Handle music events
+        socket.on('music_play', (data) => {
+            const player = document.getElementById('musicPlayer');
+            const audio = document.getElementById('musicAudio');
+            const title = document.getElementById('musicTitle');
+            const artist = document.getElementById('musicArtist');
+            
+            player.style.display = 'block';
+            audio.src = data.url;
+            title.textContent = data.title;
+            artist.textContent = data.artist;
+            audio.play();
+        });
+        
+        socket.on('music_pause', () => {
+            document.getElementById('musicAudio').pause();
+        });
+        
+        socket.on('music_stop', () => {
+            const audio = document.getElementById('musicAudio');
+            audio.pause();
+            audio.currentTime = 0;
+            document.getElementById('musicPlayer').style.display = 'none';
+        });
+        
+        // Music player controls
+        document.getElementById('musicToggle')?.addEventListener('click', () => {
+            const audio = document.getElementById('musicAudio');
+            if (audio.paused) {
+                audio.play();
+            } else {
+                audio.pause();
+            }
+        });
+        
+        document.getElementById('musicClose')?.addEventListener('click', () => {
+            document.getElementById('musicPlayer').style.display = 'none';
+            const audio = document.getElementById('musicAudio');
+            audio.pause();
+            audio.currentTime = 0;
+        });
+        
+        // Plugin notifications
+        socket.on('plugin_notification', (data) => {
+            showNotification(data.type || 'info', data.message);
+        });
+        
+        // System notifications
+        socket.on('system_notification', (data) => {
+            showNotification('info', data.message);
+        });
+    </script>
+</body>
+</html>
