@@ -131,6 +131,98 @@ async function loadPlugins() {
     }
 }
 
+// In your index.js, add this after the plugin loader section (around line 120):
+
+// ========== ADMIN REDIRECT FIX ==========
+app.get('/admin', (req, res) => {
+    // Redirect to admin login if not authenticated
+    if (!req.session.user || req.session.user.role !== 'admin') {
+        return res.redirect('/admin/login');
+    }
+    // Otherwise show admin dashboard
+    res.redirect('/admin/dashboard');
+});
+
+// ========== ADMIN LOGIN ROUTE ==========
+app.get('/admin/login', (req, res) => {
+    if (req.session.user?.role === 'admin') {
+        return res.redirect('/admin/dashboard');
+    }
+    res.render('admin/login', {
+        title: 'Admin Login | ShadowCore',
+        error: null,
+        currentPage: 'login'
+    });
+});
+
+app.post('/admin/login', (req, res) => {
+    const { password, email } = req.body;
+    
+    // Check admin password from .env
+    if (password === process.env.ADMIN_PASSWORD || password === 'Rana0986') {
+        // Create admin session
+        req.session.user = {
+            id: 'admin',
+            name: 'Administrator',
+            email: email || 'admin@shadowcore.app',
+            role: 'admin',
+            verified: true
+        };
+        return res.redirect('/admin/dashboard');
+    }
+    
+    res.render('admin/login', {
+        title: 'Admin Login | ShadowCore',
+        error: 'Invalid password',
+        currentPage: 'login'
+    });
+});
+
+// ========== ADMIN DASHBOARD ==========
+app.get('/admin/dashboard', (req, res) => {
+    if (!req.session.user || req.session.user.role !== 'admin') {
+        return res.redirect('/admin/login');
+    }
+    
+    // Get database stats
+    const db = require('./core/database');
+    const database = new db();
+    
+    Promise.all([
+        database.get('users'),
+        database.get('plugins'),
+        database.get('logs', {}, 100)
+    ]).then(([users, plugins, logs]) => {
+        res.render('admin/dashboard', {
+            title: 'Admin Dashboard | ShadowCore',
+            user: req.session.user,
+            currentPage: 'dashboard',
+            stats: {
+                totalUsers: users.length,
+                totalPlugins: plugins.length,
+                activePlugins: plugins.filter(p => p.enabled).length,
+                todayLogs: logs.filter(l => {
+                    const logDate = new Date(l.timestamp);
+                    const today = new Date();
+                    return logDate.toDateString() === today.toDateString();
+                }).length
+            },
+            plugins: plugins || [],
+            recentLogs: logs.slice(0, 10) || []
+        });
+    }).catch(error => {
+        console.error('Admin dashboard error:', error);
+        res.render('admin/dashboard', {
+            title: 'Admin Dashboard | ShadowCore',
+            user: req.session.user,
+            currentPage: 'dashboard',
+            stats: { totalUsers: 0, totalPlugins: 0, activePlugins: 0, todayLogs: 0 },
+            plugins: [],
+            recentLogs: []
+        });
+    });
+});
+
 // ========== LOAD ROUTES ==========
 async function loadRoutes() {
     const routesDir = path.join(__dirname, 'routes');
