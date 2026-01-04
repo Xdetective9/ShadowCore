@@ -142,27 +142,58 @@ class Database {
         return { ...user, password: undefined };
     }
 
-    async findUser(email) {
-        const users = await this.get('users', { email });
-        return users.length > 0 ? users[0] : null;
-    }
+    // In core/database.js, update the findUser method:
 
-    async verifyUser(token) {
+async findUser(email) {
+    try {
+        const users = await this.get('users', { email: email.toLowerCase().trim() });
+        return users.length > 0 ? users[0] : null;
+    } catch (error) {
+        console.error('Database findUser error:', error);
+        return null;
+    }
+}
+
+// Add verifyUser method:
+async verifyUser(token) {
+    try {
         const users = await this.get('users', { verificationToken: token });
-        if (users.length === 0) return false;
         
-        const user = users[0];
-        if (new Date(user.verificationExpires) < new Date()) {
-            return false; // Token expired
+        if (users.length === 0) {
+            return { success: false, error: 'Invalid verification token' };
         }
         
+        const user = users[0];
+        
+        // Check if already verified
+        if (user.verified) {
+            return { success: true, alreadyVerified: true, user: user };
+        }
+        
+        // Check expiration
+        if (user.verificationExpires && new Date(user.verificationExpires) < new Date()) {
+            return { success: false, error: 'Verification token has expired' };
+        }
+        
+        // Update user to verified
         await this.update('users', user.id, {
             verified: true,
             verificationToken: null,
-            verificationExpires: null
+            verificationExpires: null,
+            verifiedAt: new Date().toISOString()
         });
         
-        return true;
+        // Get updated user
+        const updatedUsers = await this.get('users', { id: user.id });
+        
+        return { 
+            success: true, 
+            user: updatedUsers[0] || user 
+        };
+        
+    } catch (error) {
+        console.error('Database verifyUser error:', error);
+        return { success: false, error: error.message };
     }
 }
 
