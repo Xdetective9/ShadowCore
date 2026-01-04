@@ -189,29 +189,6 @@ router.post('/signup', async (req, res) => {
     }
 });
         
-        // Create user
-        const user = await db.createUser({ email, username, password });
-        
-        // Send verification email
-        await emailService.sendVerificationEmail(
-            email, 
-            user.verificationToken, 
-            username
-        );
-        
-        res.render('auth/verify-pending', {
-            title: 'Verify Your Email',
-            email: email
-        });
-        
-    } catch (error) {
-        res.render('auth/signup', {
-            title: 'Sign Up',
-            error: 'Registration failed. Please try again.'
-        });
-    }
-});
-
 // Email verification
 router.get('/verify/:token', async (req, res) => {
     try {
