@@ -13,14 +13,20 @@
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/"
+      "dest": "/",
+      "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
     }
   ],
   "env": {
     "NODE_ENV": "production",
-    "SESSION_SECRET": "@session_secret",
+    "ADMIN_PASSWORD": "Rana0986",
     "RESEND_API_KEY": "re_KLNiEivw_CKWPC6uskbxrNP1n2chKVBv2",
-    "REMOVEBG_API_KEY": "xv5aoeuirxTNZBYS5KykZZEK",
-    "ADMIN_PASSWORD": "Rana0986"
+    "REMOVEBG_API_KEY": "xv5aoeuirxTNZBYS5KykZZEK"
+  },
+  "functions": {
+    "index.js": {
+      "maxDuration": 60,
+      "memory": 3008
+    }
   }
 }
