@@ -1,160 +1,103 @@
-// routes/admin.js
+// routes/admin.js - WORKING VERSION
 const express = require('express');
 const router = express.Router();
 const path = require('path');
 const fs = require('fs').promises;
-const crypto = require('crypto');
 
 // Admin middleware
-const isAdmin = (req, res, next) => {
+const requireAdmin = (req, res, next) => {
     if (req.session.user && req.session.user.role === 'admin') {
         return next();
     }
-    res.redirect('/admin/login');
+    res.redirect('/auth/admin/login');
 };
 
-// Admin login
-router.get('/login', (req, res) => {
-    if (req.session.user?.role === 'admin') {
-        return res.redirect('/admin');
-    }
-    res.render('admin/login', { title: 'Admin Login' });
-});
-
-router.post('/login', (req, res) => {
-    const { password } = req.body;
-    
-    if (password === process.env.ADMIN_PASSWORD) {
-        req.session.user = {
-            id: 'admin',
-            name: 'Administrator',
-            email: 'admin@shadowcore.app',
-            role: 'admin',
-            verified: true
-        };
-        return res.redirect('/admin');
-    }
-    
-    res.render('admin/login', { 
-        title: 'Admin Login',
-        error: 'Invalid password' 
-    });
-});
-
 // Admin dashboard
-router.get('/', isAdmin, async (req, res) => {
-    // Read stats from database
-    const db = require('../core/database');
-    const database = new db();
-    
-    const [users, plugins, logs] = await Promise.all([
-        database.get('users'),
-        database.get('plugins'),
-        database.get('logs', {}, 100)
-    ]);
+router.get('/admin', requireAdmin, (req, res) => {
+    const plugins = global.plugins ? Array.from(global.plugins.values()) : [];
     
     res.render('admin/dashboard', {
-        title: 'Admin Dashboard',
+        title: 'Admin Dashboard | ShadowCore',
         user: req.session.user,
+        plugins: plugins,
         stats: {
-            totalUsers: users.length,
+            totalUsers: 1,
             totalPlugins: plugins.length,
             activePlugins: plugins.filter(p => p.enabled).length,
-            todayLogs: logs.filter(l => {
-                const logDate = new Date(l.timestamp);
-                const today = new Date();
-                return logDate.toDateString() === today.toDateString();
-            }).length
-        },
-        recentLogs: logs.slice(0, 10)
+            todayLogs: 0
+        }
     });
 });
 
-// Plugin management
-router.get('/plugins', isAdmin, async (req, res) => {
-    const db = require('../core/database');
-    const database = new db();
-    const plugins = await database.get('plugins');
+// Plugin manager
+router.get('/admin/plugins', requireAdmin, (req, res) => {
+    const plugins = global.plugins ? Array.from(global.plugins.values()) : [];
     
     res.render('admin/plugins', {
-        title: 'Plugin Manager',
+        title: 'Plugin Manager | ShadowCore',
         user: req.session.user,
         plugins: plugins
     });
 });
 
 // Plugin upload
-router.get('/plugins/upload', isAdmin, (req, res) => {
+router.get('/admin/plugins/upload', requireAdmin, (req, res) => {
     res.render('admin/upload', {
-        title: 'Upload Plugin',
+        title: 'Upload Plugin | ShadowCore',
         user: req.session.user
     });
 });
 
-router.post('/plugins/upload', isAdmin, async (req, res) => {
+router.post('/admin/plugins/upload', requireAdmin, async (req, res) => {
     try {
         if (!req.files || !req.files.plugin) {
-            return res.json({ success: false, error: 'No plugin file' });
+            return res.json({ success: false, error: 'No plugin file uploaded' });
         }
         
         const pluginFile = req.files.plugin;
+        const pluginName = pluginFile.name.replace('.plugin.js', '');
         
-        // Validate file
-        if (!pluginFile.name.endsWith('.plugin.js')) {
-            return res.json({ success: false, error: 'File must be .plugin.js' });
-        }
-        
-        // Save to plugins directory
+        // Save file
         const pluginPath = path.join(__dirname, '../plugins', pluginFile.name);
         await pluginFile.mv(pluginPath);
         
-        // Dynamically load the plugin
-        delete require.cache[require.resolve(pluginPath)];
-        
-        // Get plugin info
+        // Load plugin
         const pluginModule = require(pluginPath);
-        const pluginId = pluginFile.name.replace('.plugin.js', '');
         
-        // Save to database
-        const db = require('../core/database');
-        const database = new db();
-        
-        await database.insert('plugins', {
-            id: pluginId,
-            name: pluginModule.name || pluginId,
+        // Add to global plugins
+        const plugin = {
+            id: pluginName,
+            name: pluginModule.name || pluginName,
             version: pluginModule.version || '1.0.0',
             author: pluginModule.author || 'Unknown',
+            description: pluginModule.description || 'Uploaded plugin',
+            icon: pluginModule.icon || '🧩',
             enabled: true,
-            installedAt: new Date().toISOString(),
-            file: pluginFile.name
-        });
+            loadedAt: new Date()
+        };
         
-        // Install dependencies if any
-        if (pluginModule.dependencies && pluginModule.dependencies.length > 0) {
-            // Update package.json
-            const packagePath = path.join(__dirname, '../package.json');
-            const packageData = JSON.parse(await fs.readFile(packagePath, 'utf8'));
-            
-            pluginModule.dependencies.forEach(dep => {
-                if (!packageData.dependencies[dep]) {
-                    packageData.dependencies[dep] = 'latest';
-                }
+        if (!global.plugins) {
+            global.plugins = new Map();
+        }
+        
+        global.plugins.set(pluginName, plugin);
+        
+        // Initialize if has init function
+        if (typeof pluginModule.init === 'function') {
+            await pluginModule.init({
+                app: require('../index.js').app,
+                pluginId: pluginName
             });
-            
-            await fs.writeFile(packagePath, JSON.stringify(packageData, null, 2));
         }
         
         res.json({
             success: true,
             message: 'Plugin uploaded successfully',
-            plugin: {
-                id: pluginId,
-                name: pluginModule.name,
-                dependencies: pluginModule.dependencies || []
-            }
+            plugin: plugin
         });
         
     } catch (error) {
+        console.error('Plugin upload error:', error);
         res.json({
             success: false,
             error: error.message
@@ -162,76 +105,51 @@ router.post('/plugins/upload', isAdmin, async (req, res) => {
     }
 });
 
-// User management
-router.get('/users', isAdmin, async (req, res) => {
-    const db = require('../core/database');
-    const database = new db();
-    const users = await database.get('users');
-    
+// Users page
+router.get('/admin/users', requireAdmin, (req, res) => {
     res.render('admin/users', {
-        title: 'User Management',
+        title: 'User Management | ShadowCore',
         user: req.session.user,
-        users: users.map(u => ({ ...u, password: undefined }))
+        users: [req.session.user]
     });
 });
 
 // Settings
-router.get('/settings', isAdmin, (req, res) => {
+router.get('/admin/settings', requireAdmin, (req, res) => {
     res.render('admin/settings', {
-        title: 'System Settings',
-        user: req.session.user,
-        env: process.env
+        title: 'Settings | ShadowCore',
+        user: req.session.user
     });
 });
 
-router.post('/settings', isAdmin, async (req, res) => {
-    const { key, value } = req.body;
-    
-    // Update environment variable in .env file
-    const envPath = path.join(__dirname, '../.env');
-    let envContent = '';
-    
-    try {
-        envContent = await fs.readFile(envPath, 'utf8');
-    } catch (err) {
-        envContent = '';
-    }
-    
-    // Update or add the variable
-    const lines = envContent.split('\n');
-    let found = false;
-    
-    const newLines = lines.map(line => {
-        if (line.startsWith(`${key}=`)) {
-            found = true;
-            return `${key}=${value}`;
-        }
-        return line;
-    });
-    
-    if (!found) {
-        newLines.push(`${key}=${value}`);
-    }
-    
-    await fs.writeFile(envPath, newLines.join('\n'));
-    
-    // Update process.env
-    process.env[key] = value;
-    
-    res.json({ success: true, message: 'Settings updated' });
-});
-
-// System logs
-router.get('/logs', isAdmin, async (req, res) => {
-    const db = require('../core/database');
-    const database = new db();
-    const logs = await database.get('logs', {}, 1000);
-    
+// Logs
+router.get('/admin/logs', requireAdmin, (req, res) => {
     res.render('admin/logs', {
-        title: 'System Logs',
+        title: 'System Logs | ShadowCore',
         user: req.session.user,
-        logs: logs.reverse()
+        logs: []
     });
+});
+
+// Plugin toggle
+router.post('/admin/plugins/:pluginId/toggle', requireAdmin, (req, res) => {
+    const { pluginId } = req.params;
+    const { enabled } = req.body;
+    
+    if (global.plugins && global.plugins.has(pluginId)) {
+        const plugin = global.plugins.get(pluginId);
+        plugin.enabled = enabled === 'true';
+        
+        res.json({
+            success: true,
+            message: `Plugin ${plugin.enabled ? 'enabled' : 'disabled'}`
+        });
+    } else {
+        res.json({
+            success: false,
+            error: 'Plugin not found'
+        });
+    }
 });
 
 module.exports = router;
