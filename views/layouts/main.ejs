@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= siteName %></title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="icon" href="/images/logo.png">
+</head>
+<body>
+  <header>
+    <h1><i class="fas fa-rocket"></i> <%= siteName %></h1>
+    <nav>
+      <a href="/"><i class="fas fa-home"></i> Home</a>
+      <% if (user) { %>
+        <a href="/user/profile"><i class="fas fa-user"></i> Profile</a>
+        <a href="/auth/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+      <% } else { %>
+        <a href="/auth/login"><i class="fas fa-sign-in-alt"></i> Login</a>
+        <a href="/auth/signup"><i class="fas fa-user-plus"></i> Signup</a>
+      <% } %>
+    </nav>
+  </header>
+  <main>
+    <%- body %>
+  </main>
+  <footer>
+    <p><i class="fas fa-phone"></i> Contact: <%= process.env.OWNER_NAME %> - <%= process.env.CONTACT_NUMBER %> | <i class="fas fa-envelope"></i> Support: <%= process.env.SUPPORT_EMAIL %></p>
+  </footer>
+  <script src="/js/app.js"></script>
+  <script src="/js/music.js"></script>
+</body>
+</html>
