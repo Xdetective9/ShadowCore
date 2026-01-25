@@ -11,7 +11,7 @@ OWNER_CONTACT=+923288055104
 ADMIN_PASSWORD=Rana0986
 
 # ========== DATABASE ==========
-DATABASE_URL=postgresql://username:password@localhost:5432/shadowcore
+DATABASE_URL=postgresql://abdullah_db_user:BIhl21EAvn4bJBsfoPfjPSNow4bVNTDG@dpg-d5qsil14tr6s73dmi5cg-a/abdullah_db
 DB_MAX_CONNECTIONS=20
 DB_IDLE_TIMEOUT=30000
 
