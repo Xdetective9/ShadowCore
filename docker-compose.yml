@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  shadowcore:
+    build: .
+    container_name: shadowcore
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://shadowcore:password@postgres:5432/shadowcore
+      - SESSION_SECRET=${SESSION_SECRET}
+      - OWNER_NAME=Abdullah
+      - OWNER_CONTACT=+923288055104
+      - ADMIN_PASSWORD=Rana0986
+    volumes:
+      - ./uploads:/app/uploads
+      - ./plugins:/app/plugins
+      - ./logs:/app/logs
+    depends_on:
+      - postgres
+    networks:
+      - shadowcore-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: shadowcore-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=shadowcore
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=shadowcore
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - shadowcore-network
+
+volumes:
+  postgres-data:
+
+networks:
+  shadowcore-network:
+    driver: bridge
