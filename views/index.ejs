@@ -1,0 +1,206 @@
+<% layout('layout/base') -%>
+
+<div class="hero fade-in">
+    <div class="hero-content">
+        <h1 class="gradient-text">Welcome to <%= locals.appName || 'ShadowCore' %></h1>
+        <p class="hero-subtitle">
+            Advanced modular platform with automatic plugin system, AI integration, 
+            and everything you need in one place.
+        </p>
+        
+        <div class="hero-actions">
+            <% if (!locals.user) { %>
+                <a href="/auth/signup" class="btn btn-lg btn-primary">
+                    <i class="fas fa-rocket"></i> Get Started Free
+                </a>
+                <a href="/features" class="btn btn-lg btn-secondary">
+                    <i class="fas fa-star"></i> View Features
+                </a>
+            <% } else { %>
+                <a href="/dashboard" class="btn btn-lg btn-primary">
+                    <i class="fas fa-dashboard"></i> Go to Dashboard
+                </a>
+                <a href="/plugins" class="btn btn-lg btn-secondary">
+                    <i class="fas fa-puzzle-piece"></i> Browse Plugins
+                </a>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<div class="special-message text-center">
+    ⎯ʏᴏᴜ ᴀʀᴇ ᴍʏ ʙᴇsᴛ ғʀɪᴇɴᴅ, ᴍʏ ʜᴜᴍᴀɴ ᴅɪᴀʀʏ, ᴀɴᴅ ᴍʏ ᴏᴛʜᴇʀ ʜᴀʟғ𓄹ꠂ🫶🏻🐣🌷♡゙𓂃
+</div>
+
+<section class="section">
+    <div class="container">
+        <h2 class="text-center mb-5">✨ Why Choose <%= locals.appName || 'ShadowCore' %>?</h2>
+        
+        <div class="features-grid">
+            <div class="feature-card float" style="animation-delay: 0.1s">
+                <div class="feature-icon">🔌</div>
+                <h3>Automatic Plugin System</h3>
+                <p>Plugins load automatically without restart. Upload .plugin.js or ZIP files and they work immediately.</p>
+            </div>
+            
+            <div class="feature-card float" style="animation-delay: 0.2s">
+                <div class="feature-icon">🎨</div>
+                <h3>Beautiful UI & Themes</h3>
+                <p>Modern dark/light themes with stunning animations and responsive design that works on all devices.</p>
+            </div>
+            
+            <div class="feature-card float" style="animation-delay: 0.3s">
+                <div class="feature-icon">🤖</div>
+                <h3>AI Integration Ready</h3>
+                <p>Built-in support for AI models, WhatsApp/Telegram bots, and automated workflows.</p>
+            </div>
+            
+            <div class="feature-card float" style="animation-delay: 0.4s">
+                <div class="feature-icon">⚡</div>
+                <h3>Blazing Fast Performance</h3>
+                <p>Optimized with compression, caching, and efficient database queries for maximum speed.</p>
+            </div>
+            
+            <div class="feature-card float" style="animation-delay: 0.5s">
+                <div class="feature-icon">🔒</div>
+                <h3>Enterprise Security</h3>
+                <p>Rate limiting, CSRF protection, secure sessions, and full audit logging for peace of mind.</p>
+            </div>
+            
+            <div class="feature-card float" style="animation-delay: 0.6s">
+                <div class="feature-icon">🌐</div>
+                <h3>Multi-Deployment Ready</h3>
+                <p>Deploy on Render, Railway, Vercel, Docker, or any Node.js hosting with zero configuration.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<% if (locals.plugins && locals.plugins.length > 0) { %>
+<section class="section bg-secondary">
+    <div class="container">
+        <h2 class="text-center mb-5">🧩 Featured Plugins</h2>
+        
+        <div class="plugins-grid">
+            <% locals.plugins.slice(0, 6).forEach(plugin => { %>
+                <div class="plugin-card">
+                    <div class="plugin-icon">
+                        <%= plugin.icon || '🧩' %>
+                    </div>
+                    
+                    <h3><%= plugin.name %></h3>
+                    
+                    <% if (plugin.description) { %>
+                        <p><%= plugin.description.slice(0, 100) %>...</p>
+                    <% } %>
+                    
+                    <div class="plugin-meta">
+                        <span class="badge">v<%= plugin.version %></span>
+                        <span class="badge"><%= plugin.author || 'ShadowCore' %></span>
+                    </div>
+                    
+                    <div class="plugin-actions">
+                        <a href="/plugins/<%= plugin.id %>" class="btn btn-primary btn-sm">
+                            View Details
+                        </a>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+        
+        <div class="text-center mt-5">
+            <a href="/plugins" class="btn btn-lg btn-primary">
+                <i class="fas fa-puzzle-piece"></i> Browse All Plugins
+            </a>
+        </div>
+    </div>
+</section>
+<% } %>
+
+<section class="section">
+    <div class="container">
+        <div class="owner-info text-center">
+            <div class="owner-card">
+                <h3><i class="fas fa-crown"></i> Platform Owner</h3>
+                <div class="owner-details">
+                    <p><i class="fas fa-user"></i> <strong>Name:</strong> <%= locals.ownerName || 'Abdullah' %></p>
+                    <p><i class="fas fa-phone"></i> <strong>Contact:</strong> <%= locals.ownerContact || '+923288055104' %></p>
+                    <p><i class="fas fa-code"></i> <strong>Role:</strong> Founder & Lead Developer</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .hero-content {
+        text-align: center;
+        padding: 4rem 0;
+    }
+    
+    .hero-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 2rem;
+        flex-wrap: wrap;
+    }
+    
+    .section {
+        padding: 4rem 0;
+    }
+    
+    .bg-secondary {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: var(--radius-lg);
+        margin: 2rem 0;
+        padding: 3rem;
+    }
+    
+    .text-center {
+        text-align: center;
+    }
+    
+    .mb-5 {
+        margin-bottom: 3rem;
+    }
+    
+    .mt-5 {
+        margin-top: 3rem;
+    }
+    
+    .owner-info {
+        margin-top: 4rem;
+    }
+    
+    .owner-card {
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: var(--radius);
+        padding: 2rem;
+        backdrop-filter: blur(10px);
+    }
+    
+    .owner-details {
+        text-align: left;
+        margin-top: 1rem;
+    }
+    
+    .owner-details p {
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        background: rgba(99, 102, 241, 0.1);
+        color: #818cf8;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        margin: 0.25rem;
+    }
+</style>
