@@ -1,0 +1,36 @@
+# ========== SERVER CONFIG ==========
+PORT=3000
+HOST=0.0.0.0
+NODE_ENV=production
+APP_NAME=ShadowCore
+SESSION_SECRET=your-256-bit-secret-key-change-this-in-production
+
+# ========== OWNER INFO ==========
+OWNER_NAME=Abdullah
+OWNER_CONTACT=+923288055104
+ADMIN_PASSWORD=Rana0986
+
+# ========== DATABASE ==========
+DATABASE_URL=postgresql://username:password@localhost:5432/shadowcore
+DB_MAX_CONNECTIONS=20
+DB_IDLE_TIMEOUT=30000
+
+# ========== API KEYS ==========
+REMOVEBG_API_KEY=xv5aoeuirxTNZBYS5KykZZEK
+# Add other API keys as needed
+
+# ========== SECURITY ==========
+RATE_LIMIT_WINDOW=15
+RATE_LIMIT_MAX=500
+CORS_ORIGIN=*
+
+# ========== UPLOAD ==========
+MAX_UPLOAD_SIZE=104857600
+UPLOAD_PATH=./uploads/
+TEMP_PATH=/tmp/
+
+# ========== PLUGINS ==========
+PLUGINS_DIR=./plugins
+PLUGIN_UPLOAD_DIR=./uploads/plugins
+AUTO_LOAD_PLUGINS=true
+PLUGIN_SCAN_INTERVAL=30000
