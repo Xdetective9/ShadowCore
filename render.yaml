@@ -9,11 +9,12 @@ services:
       npm run setup
     startCommand: npm start
     healthCheckPath: /health
+    # Add these lines:
     envVars:
+      - key: PORT
+        value: 10000  # Change to 10000 for Render
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000
       - key: SESSION_SECRET
         generateValue: true
       - key: OWNER_NAME
